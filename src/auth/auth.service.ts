@@ -3,7 +3,6 @@ import {
   forwardRef,
   Inject,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { SignInAuthDto, SignUpAuthDto } from './dto';
@@ -19,11 +18,34 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  private async generateToken({ sub, email }: { sub: string; email: string }) {
+  private async generateTokensAndUpdate({
+    sub,
+    email,
+  }: {
+    sub: string;
+    email: string;
+  }) {
     const payload = { sub, email };
-    const token = this.jwtService.sign(payload);
 
-    return token;
+    const accessToken = this.jwtService.sign(payload, {
+      secret: process.env.JWT_ACCESS_SECRET,
+      expiresIn: '1h',
+    });
+
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: process.env.JWT_REFRESH_SECRET,
+      expiresIn: '7d',
+    });
+
+    await this.prisma.user.update({
+      where: { id: sub },
+      data: { refreshToken },
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+    };
   }
 
   async signUp(signUpAuthDto: SignUpAuthDto) {
@@ -52,13 +74,13 @@ export class AuthService {
       },
     });
 
-    // Generate JWT token
-    const token = await this.generateToken({
+    // Generate JWT tokens
+    const { accessToken, refreshToken } = await this.generateTokensAndUpdate({
       sub: newUser.id,
       email: newUser.email,
     });
 
-    return { user: newUser, token };
+    return { user: newUser, accessToken, refreshToken };
   }
 
   async signIn(signInAuthDto: SignInAuthDto) {
@@ -68,7 +90,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new NotFoundException('Usuario no encontrado');
+      throw new UnauthorizedException('Usuario o contraseña incorrectos');
     }
 
     const isPasswordValid = await bcrypt.compare(
@@ -76,18 +98,41 @@ export class AuthService {
       user.password,
     );
 
-    // Generate JWT token
-    const token = await this.generateToken({
-      sub: user.id,
-      email: user.email,
-    });
-
     if (!isPasswordValid) {
       throw new UnauthorizedException('Usuario o contraseña incorrectos');
     }
 
+    // Generate JWT tokens
+    const { accessToken, refreshToken } = await this.generateTokensAndUpdate({
+      sub: user.id,
+      email: user.email,
+    });
+
     const { password, ...userWithoutPassword } = user;
 
-    return { user: userWithoutPassword, token };
+    return { user: userWithoutPassword, accessToken, refreshToken };
+  }
+
+  async refresh(refreshToken: string) {
+    try {
+      const decoded = this.jwtService.verify(refreshToken, {
+        secret: process.env.JWT_REFRESH_SECRET,
+      });
+
+      const user = await this.prisma.user.findUnique({
+        where: { id: decoded.sub },
+      });
+
+      if (!user || user.refreshToken !== refreshToken) {
+        throw new UnauthorizedException('Token no válido');
+      }
+
+      const { accessToken, refreshToken: newRefreshToken } =
+        await this.generateTokensAndUpdate({ sub: user.id, email: user.email });
+
+      return { accessToken, refreshToken: newRefreshToken };
+    } catch (error) {
+      throw new UnauthorizedException('Token no válido');
+    }
   }
 }

@@ -9,7 +9,6 @@ import { JwtModule } from '@nestjs/jwt';
     forwardRef(() => AppModule),
     JwtModule.register({
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '1h' },
     }),
   ],
   controllers: [AuthController],

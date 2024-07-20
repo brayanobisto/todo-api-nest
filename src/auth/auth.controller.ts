@@ -1,4 +1,10 @@
-import { Controller, Post, Body, UsePipes } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UsePipes,
+  BadRequestException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInAuthDto, SignUpAuthDto, signUpAuthSchema } from './dto';
 import { ZodValidationPipe } from 'src/pipes';
@@ -16,5 +22,14 @@ export class AuthController {
   @Post('sign-in')
   signIn(@Body() signInAuthDto: SignInAuthDto) {
     return this.authService.signIn(signInAuthDto);
+  }
+
+  @Post('refresh')
+  refresh(@Body() refreshToken: string) {
+    if (!refreshToken || refreshToken === '') {
+      throw new BadRequestException('Token no enviado');
+    }
+
+    return this.authService.refresh(refreshToken);
   }
 }

@@ -2,6 +2,7 @@ import {
   PipeTransform,
   ArgumentMetadata,
   BadRequestException,
+  HttpStatus,
 } from '@nestjs/common';
 import { ZodSchema } from 'zod';
 
@@ -18,7 +19,7 @@ export class ZodValidationPipe implements PipeTransform {
         message: 'Validación fallida',
         error: 'Bad Request',
         errors: error.errors,
-        statusCode: 400,
+        statusCode: HttpStatus.BAD_REQUEST,
       });
     }
   }
