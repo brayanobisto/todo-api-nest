@@ -7,9 +7,11 @@ export const signUpAuthSchema = z.object({
     .email({ message: 'El email debe ser válido' }),
   name: z
     .string({ message: 'El nombre es requerido' })
+    .nonempty({ message: 'El nombre no puede estar vacío' })
     .transform(trimAndLowerCase),
   lastName: z
     .string({ message: 'El apellido es requerido' })
+    .nonempty({ message: 'El apellido no puede estar vacío' })
     .transform(trimAndLowerCase),
   password: z
     .string({ message: 'La contraseña es requerida' })
