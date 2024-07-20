@@ -8,6 +8,7 @@ import { JwtModule } from '@nestjs/jwt';
   imports: [
     forwardRef(() => AppModule),
     JwtModule.register({
+      global: true,
       secret: process.env.JWT_SECRET,
     }),
   ],
