@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
 export const updateTodoSchema = z.object({
-  id: z.string({ message: 'El id es requerido' }),
   title: z.string().optional(),
   isCompleted: z.boolean().optional(),
 });

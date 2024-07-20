@@ -7,16 +7,19 @@ import {
   Param,
   Delete,
   UseGuards,
+  UsePipes,
 } from '@nestjs/common';
 import { TodosService } from './todos.service';
-import { CreateTodoDto, UpdateTodoDto } from './dto';
+import { CreateTodoDto, createTodoSchema, UpdateTodoDto } from './dto';
 import { AuthGuard } from 'src/auth/auth.guard';
+import { ZodValidationPipe } from 'src/pipes';
 
 @UseGuards(AuthGuard)
 @Controller('todos')
 export class TodosController {
   constructor(private readonly todosService: TodosService) {}
 
+  @UsePipes(new ZodValidationPipe(createTodoSchema))
   @Post()
   create(@Body() createTodoDto: CreateTodoDto) {
     return this.todosService.create(createTodoDto);
@@ -29,16 +32,16 @@ export class TodosController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.todosService.findOne(+id);
+    return this.todosService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateTodoDto: UpdateTodoDto) {
-    return this.todosService.update(+id, updateTodoDto);
+    return this.todosService.update(id, updateTodoDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.todosService.remove(+id);
+    return this.todosService.remove(id);
   }
 }
