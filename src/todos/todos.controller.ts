@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   UsePipes,
+  Request,
 } from '@nestjs/common';
 import { TodosService } from './todos.service';
 import { CreateTodoDto, createTodoSchema, UpdateTodoDto } from './dto';
@@ -21,27 +22,36 @@ export class TodosController {
 
   @UsePipes(new ZodValidationPipe(createTodoSchema))
   @Post()
-  create(@Body() createTodoDto: CreateTodoDto) {
-    return this.todosService.create(createTodoDto);
+  create(@Body() createTodoDto: CreateTodoDto, @Request() req) {
+    const userId = req.user.sub;
+    return this.todosService.create(createTodoDto, userId);
   }
 
   @Get()
-  findAll() {
-    return this.todosService.findAll();
+  findAll(@Request() req) {
+    const userId = req.user.sub;
+    return this.todosService.findAll(userId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.todosService.findOne(id);
+  findOne(@Param('id') id: string, @Request() req) {
+    const userId = req.user.sub;
+    return this.todosService.findOne(id, userId);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTodoDto: UpdateTodoDto) {
-    return this.todosService.update(id, updateTodoDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateTodoDto: UpdateTodoDto,
+    @Request() req,
+  ) {
+    const userId = req.user.sub;
+    return this.todosService.update(id, updateTodoDto, userId);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.todosService.remove(id);
+  remove(@Param('id') id: string, @Request() req) {
+    const userId = req.user.sub;
+    return this.todosService.remove(id, userId);
   }
 }

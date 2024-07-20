@@ -15,19 +15,30 @@ export class TodosService {
     private prisma: PrismaService,
   ) {}
 
-  create(createTodoDto: CreateTodoDto) {
+  create(createTodoDto: CreateTodoDto, userId: string) {
     return this.prisma.todo.create({
-      data: createTodoDto,
+      data: {
+        ...createTodoDto,
+        user: {
+          connect: {
+            id: userId,
+          },
+        },
+      },
     });
   }
 
-  findAll() {
-    return this.prisma.todo.findMany();
+  findAll(userId: string) {
+    return this.prisma.todo.findMany({
+      where: {
+        userId,
+      },
+    });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, userId: string) {
     const todo = await this.prisma.todo.findUnique({
-      where: { id },
+      where: { id, userId },
     });
 
     if (!todo) {
@@ -37,8 +48,8 @@ export class TodosService {
     return todo;
   }
 
-  async update(id: string, updateTodoDto: UpdateTodoDto) {
-    const todo = await this.findOne(id);
+  async update(id: string, updateTodoDto: UpdateTodoDto, userId: string) {
+    const todo = await this.findOne(id, userId);
 
     return this.prisma.todo.update({
       where: { id: todo.id },
@@ -46,8 +57,8 @@ export class TodosService {
     });
   }
 
-  async remove(id: string) {
-    const todo = await this.findOne(id.toString());
+  async remove(id: string, userId: string) {
+    const todo = await this.findOne(id, userId);
 
     return this.prisma.todo.delete({
       where: { id: todo.id },
